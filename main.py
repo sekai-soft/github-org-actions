@@ -1,4 +1,6 @@
+import os
 import datetime
+import sentry_sdk
 from typing import Annotated
 from fastapi import FastAPI, Query, Request
 from fastapi.templating import Jinja2Templates
@@ -7,6 +9,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from github import Github, Auth
 from github_org_actions.models import RepoResult
 from github_org_actions.github import get_res
+
+
+if os.getenv('SENTRY_DSN'):
+    sentry_sdk.init(
+        dsn=os.getenv('SENTRY_DSN'),
+    )
 
 
 class Settings(BaseSettings):
