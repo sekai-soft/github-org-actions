@@ -48,8 +48,15 @@ def time_ago(timestamp):
         return f"{int(seconds)}s ago"
 
 
-# GitHub GQL CheckConclusionState
 workflow_status_to_emoji_map = {
+    # GitHub GQL CheckStatusState
+    "requested": "🔄",
+    "queued": "🕒",
+    "in_progress": "🔄",
+    "completed": "🏁",
+    "waiting": "⏳",
+    "pending": "⏳",
+    # GitHub GQL CheckConclusionState
     "action_required": "✋",
     "timed_out": "⏰",
     "cancelled": "🚫",
