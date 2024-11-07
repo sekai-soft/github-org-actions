@@ -16,7 +16,7 @@
         {%- for repo_res in res %}
         <p><a href="{{ repo_res.repo_url }}" target="_blank">{{ repo_res.name }}</a>&nbsp;(<a href="{{ repo_res.latest_commit_url }}" target="_blank">{{ repo_res.latest_commit }}</a>)</p>
         {%- for workflow_res in repo_res.workflows %}
-        <p>&nbsp;&nbsp;&nbsp;&nbsp;{{ workflow_res.name }}&nbsp;(<a href="{{ workflow_res.run_url }}" target="_blank">{{workflow_res.status}}</a>, {{time_ago(workflow_res.created_at)}})</p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;{{ workflow_status_to_emoji(workflow_res.status) }}&nbsp;{{ workflow_res.name }}&nbsp;(<a href="{{ workflow_res.run_url }}" target="_blank">{{workflow_res.status}}</a>, {{time_ago(workflow_res.created_at)}})</p>
         {% endfor %}
         {% endfor %}
     </body>

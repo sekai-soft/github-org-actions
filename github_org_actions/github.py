@@ -17,7 +17,7 @@ query GitHubOrgActions($org: String!) {
             ... on Commit {
               checkSuites(first: 100, filterBy: {appId: 15368}) {
                 nodes {
-                  status
+                  conclusion
                   workflowRun {
                     createdAt
                     url
@@ -62,7 +62,7 @@ async def get_res(org: str, excluded_repos: list[str], token: str) -> list[RepoR
                 name=check_suite["workflowRun"]["workflow"]["name"],
                 run_url=check_suite["workflowRun"]["url"],
                 created_at=check_suite["workflowRun"]["createdAt"],
-                status=check_suite["status"].lower()
+                status=check_suite["conclusion"].lower()
             ))
         workflow_res_list.sort(key=lambda x: x.created_at, reverse=True)
         if not workflow_res_list:

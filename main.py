@@ -48,13 +48,35 @@ def time_ago(timestamp):
         return f"{int(seconds)}s ago"
 
 
+# GitHub GQL CheckConclusionState
+workflow_status_to_emoji_map = {
+    "action_required": "✋",
+    "timed_out": "⏰",
+    "cancelled": "🚫",
+    "failure": "❌",
+    "success": "✅",
+    "neutral": "🟡",
+    "skipped": "⏭️",
+    "startup_failure": "🚫",
+    # "stale": "",  // The check suite or run was marked stale by GitHub. Only GitHub can use this conclusion.
+}
+
+
+def workflow_status_to_emoji(workflow_status: str) -> str:
+    return workflow_status_to_emoji_map.get(workflow_status, "❓")
+
+
 @app.get("/")
 async def _root(request: Request):
     res = await get_res(settings.ui_default_org, settings.ui_default_excluded_repos.split(","), settings.github_token)
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"res": res, "time_ago": time_ago}
+        context={
+            "res": res,
+            "time_ago": time_ago,
+            "workflow_status_to_emoji": workflow_status_to_emoji
+        }
     )
 
 
