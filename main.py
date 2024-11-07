@@ -73,20 +73,39 @@ def workflow_status_to_emoji(workflow_status: str) -> str:
     return workflow_status_to_emoji_map.get(workflow_status, "❓")
 
 
-@app.get("/")
-async def _root(request: Request):
-    res = await get_res(settings.ui_default_org, settings.ui_default_excluded_repos.split(","), settings.github_token)
+@app.get("/api/{org}")
+async def _api(org: str, e: Annotated[list[str], Query()] = []) -> list[RepoResult]:
+    return await get_res(org, e, settings.github_token)
+
+
+@app.get("/org/{org}")
+async def _org(request: Request, org: str, e: Annotated[list[str], Query()] = []):
+    res = await get_res(org, e, settings.github_token)
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
             "res": res,
+            "org": org,
+            "auto_refresh": False,
             "time_ago": time_ago,
             "workflow_status_to_emoji": workflow_status_to_emoji
         }
     )
 
 
-@app.get("/api/{org}")
-async def _api(org: str, e: Annotated[list[str], Query()] = []) -> list[RepoResult]:
-    return await get_res(org, e, settings.github_token)
+@app.get("/")
+async def _root(request: Request):
+    org = settings.ui_default_org
+    res = await get_res(org, settings.ui_default_excluded_repos.split(","), settings.github_token)
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "res": res,
+            "org": org,
+            "auto_refresh": True,
+            "time_ago": time_ago,
+            "workflow_status_to_emoji": workflow_status_to_emoji
+        }
+    )

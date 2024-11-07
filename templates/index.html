@@ -4,8 +4,12 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>GitHub Org Actions</title>
+        {% if auto_refresh %}
+        <title>🔄 {{ org }} | GitHub Org Actions</title>
         <meta http-equiv="refresh" content="10">
+        {% else %}
+        <title>{{ org }} | GitHub Org Actions</title>
+        {% endif %}
         <!-- url_for returns http (insecure) links for styles.css so need this to upgrade to https otherwise browser gives mixed content warning and won't load styles.css -->
         <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/sekai-soft/galerie/static/base.css">
