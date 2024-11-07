@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from github import Github, Auth
 from github_org_actions.models import RepoResult
-from github_org_actions.github import get_repo_res
+from github_org_actions.github import get_res
 
 
 class Settings(BaseSettings):
@@ -22,20 +22,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 auth = Auth.Token(settings.github_token)
 github = Github(auth=auth)
-
-
-def _get_res(org: str, excluded_repos: list[str]) -> list[RepoResult]:
-    org = github.get_organization(org)
-    repos = org.get_repos(type="public")
-
-    res = []
-    for repo in repos:
-        repo_res = get_repo_res(repo, excluded_repos)
-        if repo_res:
-            res.append(repo_res)
-    res.sort(key=lambda x: min([w.created_at for w in x.workflows]), reverse=True)
-
-    return res
 
 
 def time_ago(timestamp):
@@ -59,7 +45,7 @@ def time_ago(timestamp):
 
 @app.get("/")
 async def _root(request: Request):
-    res = _get_res(settings.ui_default_org, settings.ui_default_excluded_repos.split(","))
+    res = await get_res(settings.ui_default_org, settings.ui_default_excluded_repos.split(","), settings.github_token)
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -69,4 +55,4 @@ async def _root(request: Request):
 
 @app.get("/api/{org}")
 async def _api(org: str, e: Annotated[list[str], Query()] = []) -> list[RepoResult]:
-    return _get_res(org, e)
+    return await get_res(org, e, settings.github_token)

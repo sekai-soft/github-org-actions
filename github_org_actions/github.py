@@ -1,60 +1,80 @@
-from github.Repository import Repository
-from github.Branch import Branch
-from github.Workflow import Workflow
-from github.WorkflowRun import WorkflowRun
+from gql import gql, Client
+from gql.transport.aiohttp import AIOHTTPTransport
 from .models import WorkflowResult, RepoResult
 
 
-def try_get_master_branch(repo: Repository) -> Branch | None:
-    try:
-        return repo.get_branch("main")
-    except:
-        try:
-            return repo.get_branch("master")
-        except:
-            return None
+GRAPHQL_QUERY = """
+query GitHubOrgActions($org: String!) {
+  organization(login: $org) {
+    repositories(visibility: PUBLIC, isArchived: false, first: 100) {
+      nodes {
+        name
+        url
+        defaultBranchRef {
+          target {
+            abbreviatedOid
+            commitUrl
+            ... on Commit {
+              checkSuites(first: 100, filterBy: {appId: 15368}) {
+                nodes {
+                  status
+                  workflowRun {
+                    createdAt
+                    url
+                    workflow {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
 
 
-def get_workflow_res(workflow: Workflow, head_sha: str) -> WorkflowResult | None:
-    runs = workflow.get_runs(head_sha=head_sha).get_page(0)
-    if not runs:
-        return None
-    run = runs[0]  # type: WorkflowRun
-    return WorkflowResult(
-        name=workflow.name,
-        run_url=run.html_url,
-        created_at=run.created_at,
-        status=run.status
-    )
-
-
-def get_repo_res(repo: Repository, excluded_repo: list[str]) -> RepoResult | None:
-    if repo.name in excluded_repo:
-        return None
+async def get_res(org: str, excluded_repos: list[str], token: str) -> list[RepoResult]:
+    headers = {"Authorization": f"Bearer {token}"}
+    transport = AIOHTTPTransport(url="https://api.github.com/graphql", headers=headers)
+    client = Client(transport=transport)
+    gql_res = await client.execute_async(gql(GRAPHQL_QUERY), variable_values={"org": org})
     
-    if repo.archived:
-        return None
+    res = []
+    for repo in gql_res["organization"]["repositories"]["nodes"]:
+        if repo["name"] in excluded_repos:
+            continue
+        
+        if not repo["defaultBranchRef"] \
+            or not repo["defaultBranchRef"]["target"] \
+                or not repo["defaultBranchRef"]["target"]["checkSuites"] \
+                    or not repo["defaultBranchRef"]["target"]["checkSuites"]["nodes"]:
+            continue
+       
+        workflow_res_list = []  # type: list[WorkflowResult]
+        for check_suite in repo["defaultBranchRef"]["target"]["checkSuites"]["nodes"]:
+            if check_suite["workflowRun"] is None:
+                continue
+            workflow_res_list.append(WorkflowResult(
+                name=check_suite["workflowRun"]["workflow"]["name"],
+                run_url=check_suite["workflowRun"]["url"],
+                created_at=check_suite["workflowRun"]["createdAt"],
+                status=check_suite["status"].lower()
+            ))
+        workflow_res_list.sort(key=lambda x: x.created_at, reverse=True)
+        if not workflow_res_list:
+            continue
 
-    master_branch = try_get_master_branch(repo)
-    if not master_branch:
-        return None
-    head_sha = master_branch.commit.sha
-    
-    workflows = repo.get_workflows()
-    if workflows.totalCount == 0:
-        return None
+        res.append(RepoResult(
+            name=repo["name"],
+            repo_url=repo["url"],
+            latest_commit=repo["defaultBranchRef"]["target"]["abbreviatedOid"],
+            latest_commit_url=repo["defaultBranchRef"]["target"]["commitUrl"],
+            workflows=workflow_res_list
+        ))
+    res.sort(key=lambda x: min([w.created_at for w in x.workflows]), reverse=True)
 
-    workflow_res_list = []  # type: list[WorkflowResult]
-    for workflow in workflows:
-        workflow_res = get_workflow_res(workflow, head_sha)
-        if workflow_res:
-            workflow_res_list.append(workflow_res)
-    workflow_res_list.sort(key=lambda x: x.created_at, reverse=True)
-
-    return RepoResult(
-        name=repo.name,
-        repo_url=repo.html_url,
-        latest_commit=master_branch.commit.sha[: 7],
-        latest_commit_url=master_branch.commit.html_url,
-        workflows=workflow_res_list
-    )
+    return res
