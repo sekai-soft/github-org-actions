@@ -22,6 +22,7 @@ def get_workflow_res(workflow: Workflow, head_sha: str) -> WorkflowResult | None
     run = runs[0]  # type: WorkflowRun
     return WorkflowResult(
         name=workflow.name,
+        run_url=run.html_url,
         created_at=run.created_at,
         status=run.status
     )
@@ -52,5 +53,8 @@ def get_repo_res(repo: Repository, excluded_repo: list[str]) -> RepoResult | Non
 
     return RepoResult(
         name=repo.name,
+        repo_url=repo.html_url,
+        latest_commit=master_branch.commit.sha[: 7],
+        latest_commit_url=master_branch.commit.html_url,
         workflows=workflow_res_list
     )

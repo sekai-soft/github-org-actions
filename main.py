@@ -2,6 +2,7 @@ import datetime
 from typing import Annotated
 from fastapi import FastAPI, Query, Request
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from github import Github, Auth
 from github_org_actions.models import RepoResult
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 auth = Auth.Token(settings.github_token)
 github = Github(auth=auth)
