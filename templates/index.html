@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>GitHub Actions</title>
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/sekai-soft/galerie/static/base.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/sekai-soft/galerie/static/elements.css">
+    </head>
+    <body>
+        {%- for repo_res in res %}
+        <p>{{ repo_res.name -}}</p>
+        {%- for workflow_res in repo_res.workflows %}
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;{{ workflow_res.name -}}&nbsp;({{workflow_res.status}}, {{time_ago(workflow_res.created_at)}})</p>
+        {% endfor %}
+        {% endfor %}
+    </body>
+</html>
