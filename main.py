@@ -25,11 +25,14 @@ github = Github(auth=auth)
 def _get_res(org: str, excluded_repos: list[str]) -> list[RepoResult]:
     org = github.get_organization(org)
     repos = org.get_repos(type="public")
+
     res = []
     for repo in repos:
         repo_res = get_repo_res(repo, excluded_repos)
         if repo_res:
             res.append(repo_res)
+    res.sort(key=lambda x: min([w.created_at for w in x.workflows]), reverse=True)
+
     return res
 
 
@@ -41,7 +44,7 @@ def time_ago(timestamp):
     if seconds >= 31536000:
         return f"{int(seconds // 31536000)}y ago"
     elif seconds >= 2592000:
-        return f"{int(seconds // 2592000)}m ago"
+        return f"{int(seconds // 2592000)}mo ago"
     elif seconds >= 86400:
         return f"{int(seconds // 86400)}d ago"
     elif seconds >= 3600:

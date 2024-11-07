@@ -48,6 +48,7 @@ def get_repo_res(repo: Repository, excluded_repo: list[str]) -> RepoResult | Non
         workflow_res = get_workflow_res(workflow, head_sha)
         if workflow_res:
             workflow_res_list.append(workflow_res)
+    workflow_res_list.sort(key=lambda x: x.created_at, reverse=True)
 
     return RepoResult(
         name=repo.name,
