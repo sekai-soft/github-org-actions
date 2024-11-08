@@ -47,8 +47,11 @@ query GitHubOrgActions($org: String!) {
 """
 
 
-async def get_res(org: str, excluded_repos: list[str], token: str) -> Result:
-    gql_res = await call_gql(GET_RES_GQL, {"org": org}, token)
+async def get_res(org: str, excluded_repos: list[str], token: str) -> Result | None:
+    try:
+      gql_res = await call_gql(GET_RES_GQL, {"org": org}, token)
+    except TransportQueryError:
+      return None
     
     repo_results = []
     for repo in gql_res["organization"]["repositories"]["nodes"]:
@@ -84,21 +87,7 @@ async def get_res(org: str, excluded_repos: list[str], token: str) -> Result:
         ))
     repo_results.sort(key=lambda x: min([w.created_at for w in x.workflows]), reverse=True)
 
-    return Result(org_name=gql_res["organization"]["name"], repos=repo_results)
-
-
-CHECK_ORG_GQL = """
-query CheckGitHubOrg($org: String!) {
-  organization(login: $org) {
-  	name
-  }
-}
-"""
-
-
-async def check_org(org: str, token: str) -> bool:
-    try:
-      await call_gql(CHECK_ORG_GQL, {"org": org}, token)
-    except TransportQueryError:
-      return False
-    return True
+    return Result(
+      org_name=gql_res["organization"]["name"],
+      repos=repo_results
+    )

@@ -6,8 +6,8 @@ from fastapi import FastAPI, Query, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from github_org_actions.models import RepoResult
-from github_org_actions.github import check_org, get_res
+from github_org_actions.models import RepoResult, Result
+from github_org_actions.github import get_res
 
 
 if os.getenv('SENTRY_DSN'):
@@ -51,24 +51,39 @@ workflow_status_to_emoji_map = {
     "requested": "🕒",
     "queued": "🕒",
     "in_progress": "🔄",
-    "completed": "🏁",
+    # "completed": "",  // This state should technically not be considered once there is a conclusion
     "waiting": "🕒",
     "pending": "🕒",
     # GitHub GQL CheckConclusionState
-    "action_required": "✋",
+    "action_required": "🕒",
     "timed_out": "❌",
-    "cancelled": "🚫",
+    "cancelled": "🟡",
     "failure": "❌",
     "success": "✅",
     "neutral": "🟡",
-    "skipped": "⏭️",
-    "startup_failure": "🚫",
+    "skipped": "🟡",
+    "startup_failure": "❌",
     # "stale": "",  // The check suite or run was marked stale by GitHub. Only GitHub can use this conclusion.
 }
 
 
 def workflow_status_to_emoji(workflow_status: str) -> str:
     return workflow_status_to_emoji_map.get(workflow_status, "❓")
+
+
+status_emoji_precedence = [
+    "❌", "🕒", "🔄", "✅", "🟡"
+]
+
+
+def repo_status_emoji(repo_res: RepoResult) -> str:
+    res = status_emoji_precedence[-1]
+    for workflow in repo_res.workflows:
+        emoji = workflow_status_to_emoji(workflow.status)
+        if emoji in status_emoji_precedence \
+            and status_emoji_precedence.index(emoji) < status_emoji_precedence.index(res):
+            res = emoji
+    return res
 
 
 @app.get("/api/{org}")
@@ -88,13 +103,15 @@ async def _root(
             request=request,
             name="index.html"
         )
-    if not await check_org(o, settings.github_token):
+
+    res = await get_res(o, e, settings.github_token)
+    if not res:
         return templates.TemplateResponse(
             request=request,
             name="error.html",
             context={"message": f"GitHub org '{o}' not found"}
         )
-    res = await get_res(o, e, settings.github_token)
+
     return templates.TemplateResponse(
         request=request,
         name="org.html",
@@ -102,6 +119,7 @@ async def _root(
             "res": res,
             "auto_refresh": not dar,
             "time_ago": time_ago,
-            "workflow_status_to_emoji": workflow_status_to_emoji
+            "workflow_status_to_emoji": workflow_status_to_emoji,
+            "repo_status_emoji": repo_status_emoji
         }
     )
