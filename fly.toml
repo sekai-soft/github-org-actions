@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for sekaisoft-gh-actions on 2024-11-06T14:40:27-08:00
+# fly.toml app configuration file generated for gh-org-actions on 2024-11-07T18:02:34-08:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'sekaisoft-gh-actions'
+app = 'gh-org-actions'
 primary_region = 'sjc'
 
 [build]
@@ -15,7 +15,7 @@ primary_region = 'sjc'
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = "off"
+  auto_stop_machines = 'off'
   auto_start_machines = false
   min_machines_running = 1
   processes = ['app']
