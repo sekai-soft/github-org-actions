@@ -13,10 +13,3 @@ form {
     height: 95vh; /* Full viewport height */
     margin: 0 auto; /* Center horizontally */
 }
-
-.footer {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
