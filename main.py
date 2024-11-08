@@ -74,12 +74,12 @@ def workflow_status_to_emoji(workflow_status: str) -> str:
 
 
 @app.get("/api/{org}")
-async def _api(org: str, e: Annotated[list[str], Query()] = []) -> list[RepoResult]:
+async def _api(org: str, e: Annotated[list[str], Query(title="Excluded repos")] = []) -> list[RepoResult]:
     return await get_res(org, e, settings.github_token)
 
 
 @app.get("/org/{org}")
-async def _org(request: Request, org: str, e: Annotated[list[str], Query()] = []):
+async def _org(request: Request, org: str, e: Annotated[list[str], Query(title="Excluded repos")] = []):
     res = await get_res(org, e, settings.github_token)
     return templates.TemplateResponse(
         request=request,
@@ -95,7 +95,7 @@ async def _org(request: Request, org: str, e: Annotated[list[str], Query()] = []
 
 
 @app.get("/")
-async def _root(request: Request):
+async def _root(request: Request, dar: Annotated[bool, Query(title="Disable auto-refresh")] = False):
     org = settings.ui_default_org
     res = await get_res(org, settings.ui_default_excluded_repos.split(","), settings.github_token)
     return templates.TemplateResponse(
@@ -104,7 +104,7 @@ async def _root(request: Request):
         context={
             "res": res,
             "org": org,
-            "auto_refresh": True,
+            "auto_refresh": not dar,
             "time_ago": time_ago,
             "workflow_status_to_emoji": workflow_status_to_emoji
         }

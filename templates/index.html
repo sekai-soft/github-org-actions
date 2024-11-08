@@ -5,10 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         {% if auto_refresh %}
-        <title>🔄 {{ org }} | GitHub Org Actions</title>
+        <title>🔄 GitHub Org Actions</title>
         <meta http-equiv="refresh" content="10">
         {% else %}
-        <title>{{ org }} | GitHub Org Actions</title>
+        <title>GitHub Org Actions</title>
         {% endif %}
         <!-- url_for returns http (insecure) links for styles.css so need this to upgrade to https otherwise browser gives mixed content warning and won't load styles.css -->
         <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
@@ -17,6 +17,9 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}">
     </head>
     <body>
+        <div class="header">
+            <p>{{ org }}</p>
+        </div>
         {%- for repo_res in res %}
         <p><a href="{{ repo_res.repo_url }}" target="_blank">{{ repo_res.name }}</a>&nbsp;(<a href="{{ repo_res.latest_commit_url }}" target="_blank">{{ repo_res.latest_commit }}</a>)</p>
         {%- for workflow_res in repo_res.workflows %}
