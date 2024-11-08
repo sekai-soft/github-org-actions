@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from github_org_actions.models import RepoResult
-from github_org_actions.github import get_res
+from github_org_actions.github import check_org, get_res
 
 
 if os.getenv('SENTRY_DSN'):
@@ -18,8 +18,6 @@ if os.getenv('SENTRY_DSN'):
 
 class Settings(BaseSettings):
     github_token: str
-    ui_default_org: str
-    ui_default_excluded_repos: str
     model_config = SettingsConfigDict(env_file=".env")
 
 
@@ -50,15 +48,15 @@ def time_ago(timestamp):
 
 workflow_status_to_emoji_map = {
     # GitHub GQL CheckStatusState
-    "requested": "🔄",
+    "requested": "🕒",
     "queued": "🕒",
     "in_progress": "🔄",
     "completed": "🏁",
-    "waiting": "⏳",
-    "pending": "⏳",
+    "waiting": "🕒",
+    "pending": "🕒",
     # GitHub GQL CheckConclusionState
     "action_required": "✋",
-    "timed_out": "⏰",
+    "timed_out": "❌",
     "cancelled": "🚫",
     "failure": "❌",
     "success": "✅",
@@ -78,32 +76,30 @@ async def _api(org: str, e: Annotated[list[str], Query(title="Excluded repos")] 
     return await get_res(org, e, settings.github_token)
 
 
-@app.get("/org/{org}")
-async def _org(request: Request, org: str, e: Annotated[list[str], Query(title="Excluded repos")] = []):
-    res = await get_res(org, e, settings.github_token)
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context={
-            "res": res,
-            "org": org,
-            "auto_refresh": False,
-            "time_ago": time_ago,
-            "workflow_status_to_emoji": workflow_status_to_emoji
-        }
-    )
-
-
 @app.get("/")
-async def _root(request: Request, dar: Annotated[bool, Query(title="Disable auto-refresh")] = False):
-    org = settings.ui_default_org
-    res = await get_res(org, settings.ui_default_excluded_repos.split(","), settings.github_token)
+async def _root(
+    request: Request,
+    o: Annotated[str, Query(title="GitHub Org")] = None,
+    e: Annotated[list[str], Query(title="Excluded repos")] = [],
+    dar: Annotated[bool, Query(title="Disable auto-refresh")] = False
+):
+    if not o:
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html"
+        )
+    if not await check_org(o, settings.github_token):
+        return templates.TemplateResponse(
+            request=request,
+            name="error.html",
+            context={"message": f"GitHub org '{o}' not found"}
+        )
+    res = await get_res(o, e, settings.github_token)
     return templates.TemplateResponse(
         request=request,
-        name="index.html",
+        name="org.html",
         context={
             "res": res,
-            "org": org,
             "auto_refresh": not dar,
             "time_ago": time_ago,
             "workflow_status_to_emoji": workflow_status_to_emoji

@@ -1,11 +1,20 @@
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
-from .models import WorkflowResult, RepoResult
+from gql.transport.exceptions import TransportQueryError
+from .models import WorkflowResult, RepoResult, Result
 
 
-GRAPHQL_QUERY = """
+async def call_gql(query, variables, token):
+    headers = {"Authorization": f"Bearer {token}"}
+    transport = AIOHTTPTransport(url="https://api.github.com/graphql", headers=headers)
+    client = Client(transport=transport)
+    return await client.execute_async(gql(query), variable_values=variables)
+
+
+GET_RES_GQL = """
 query GitHubOrgActions($org: String!) {
   organization(login: $org) {
+    name
     repositories(visibility: PUBLIC, isArchived: false, first: 100) {
       nodes {
         name
@@ -38,13 +47,10 @@ query GitHubOrgActions($org: String!) {
 """
 
 
-async def get_res(org: str, excluded_repos: list[str], token: str) -> list[RepoResult]:
-    headers = {"Authorization": f"Bearer {token}"}
-    transport = AIOHTTPTransport(url="https://api.github.com/graphql", headers=headers)
-    client = Client(transport=transport)
-    gql_res = await client.execute_async(gql(GRAPHQL_QUERY), variable_values={"org": org})
+async def get_res(org: str, excluded_repos: list[str], token: str) -> Result:
+    gql_res = await call_gql(GET_RES_GQL, {"org": org}, token)
     
-    res = []
+    repo_results = []
     for repo in gql_res["organization"]["repositories"]["nodes"]:
         if repo["name"] in excluded_repos:
             continue
@@ -69,13 +75,30 @@ async def get_res(org: str, excluded_repos: list[str], token: str) -> list[RepoR
         if not workflow_res_list:
             continue
 
-        res.append(RepoResult(
+        repo_results.append(RepoResult(
             name=repo["name"],
             repo_url=repo["url"],
             latest_commit=repo["defaultBranchRef"]["target"]["abbreviatedOid"],
             latest_commit_url=repo["defaultBranchRef"]["target"]["commitUrl"],
             workflows=workflow_res_list
         ))
-    res.sort(key=lambda x: min([w.created_at for w in x.workflows]), reverse=True)
+    repo_results.sort(key=lambda x: min([w.created_at for w in x.workflows]), reverse=True)
 
-    return res
+    return Result(org_name=gql_res["organization"]["name"], repos=repo_results)
+
+
+CHECK_ORG_GQL = """
+query CheckGitHubOrg($org: String!) {
+  organization(login: $org) {
+  	name
+  }
+}
+"""
+
+
+async def check_org(org: str, token: str) -> bool:
+    try:
+      await call_gql(CHECK_ORG_GQL, {"org": org}, token)
+    except TransportQueryError:
+      return False
+    return True

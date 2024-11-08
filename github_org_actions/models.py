@@ -15,3 +15,8 @@ class RepoResult(BaseModel):
     latest_commit: str
     latest_commit_url: str
     workflows: list[WorkflowResult]
+
+
+class Result(BaseModel):
+    org_name: str
+    repos: list[RepoResult]
