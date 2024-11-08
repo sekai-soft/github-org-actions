@@ -1,24 +1,7 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        {% if auto_refresh %}
-        <title>🔄 GitHub Org Actions</title>
-        <meta http-equiv="refresh" content="10">
-        {% else %}
-        <title>GitHub Org Actions</title>
-        {% endif %}
-        <!-- url_for returns http (insecure) links for styles.css so need this to upgrade to https otherwise browser gives mixed content warning and won't load styles.css -->
-        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/base.css') }}">
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/elements.css') }}">
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/styles.css') }}">
-    </head>
-    <body>
-        <div class="header">
-            <p>{{ message }}</p>
-        </div>
-    </body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="header">
+    <p>{{ message }}</p>
+</div>
+{% endblock %}
