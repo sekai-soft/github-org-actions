@@ -1,0 +1,16 @@
+name: github-org-actions
+services:
+  github-org-actions:
+    image: ghcr.io/sekai-soft/github-org-actions:latest
+    container_name: github-org-actions
+    restart: unless-stopped
+    env_file:
+      - env
+  cloudflared:
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel run github-org-actions
+    env_file:
+      - env
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
