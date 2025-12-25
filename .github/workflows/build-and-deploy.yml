@@ -114,9 +114,9 @@ jobs:
           tags: tag:ops
       - name: Pull and restart container
         run: |
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "nixos@gibraltar" \
-            "mkdir -p /home/nixos/github-org-actions && \
-             wget -O /home/nixos/github-org-actions/compose.yaml https://raw.githubusercontent.com/sekai-soft/github-org-actions/${{ github.sha }}/compose.production.yaml && \
-             sed -i 's|ghcr.io/sekai-soft/github-org-actions:latest|ghcr.io/sekai-soft/github-org-actions:${{ github.sha }}|g' /home/nixos/github-org-actions/compose.yaml && \
-             docker compose -f /home/nixos/github-org-actions/compose.yaml pull github-org-actions && \
-             docker compose -f /home/nixos/github-org-actions/compose.yaml up -d"
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@eichenwalde" \
+            "mkdir -p /root/github-org-actions && \
+             wget -O /root/github-org-actions/compose.yaml https://raw.githubusercontent.com/sekai-soft/github-org-actions/${{ github.sha }}/compose.production.yaml && \
+             sed -i 's|ghcr.io/sekai-soft/github-org-actions:latest|ghcr.io/sekai-soft/github-org-actions:${{ github.sha }}|g' /root/github-org-actions/compose.yaml && \
+             docker compose -f /root/github-org-actions/compose.yaml pull github-org-actions && \
+             docker compose -f /root/github-org-actions/compose.yaml up -d"
