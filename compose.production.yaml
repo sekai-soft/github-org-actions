@@ -24,3 +24,6 @@ services:
       - sys_module
     labels:
       - com.centurylinklabs.watchtower.enable=true
+
+volumes:
+  github-org-actions-ts:
