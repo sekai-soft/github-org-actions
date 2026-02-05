@@ -86,11 +86,6 @@ def repo_status_emoji(repo_res: RepoResult) -> str:
     return res
 
 
-@app.get("/api/{org}")
-async def _api(org: str, e: Annotated[list[str], Query(title="Excluded repos")] = []) -> list[RepoResult]:
-    return await get_res(org, e, settings.github_token)
-
-
 @app.get("/")
 async def _root(
     request: Request,
@@ -105,11 +100,11 @@ async def _root(
         )
 
     res = await get_res(o, e, settings.github_token)
-    if not res:
+    if type(res) is str:
         return templates.TemplateResponse(
             request=request,
             name="error.html",
-            context={"message": f"GitHub org '{o}' not found"}
+            context={"message": res}
         )
 
     return templates.TemplateResponse(

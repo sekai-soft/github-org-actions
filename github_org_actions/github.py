@@ -47,11 +47,11 @@ query GitHubOrgActions($org: String!) {
 """
 
 
-async def get_res(org: str, excluded_repos: list[str], token: str) -> Result | None:
+async def get_res(org: str, excluded_repos: list[str], token: str) -> Result | str:
     try:
       gql_res = await call_gql(GET_RES_GQL, {"org": org}, token)
-    except TransportQueryError:
-      return None
+    except TransportQueryError as e:
+      return f"Errors: {str(e.errors)}"
     
     repo_results = []
     for repo in gql_res["organization"]["repositories"]["nodes"]:
