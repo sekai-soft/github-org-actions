@@ -9,6 +9,7 @@ services:
     network_mode: service:github-org-actions-ts
   github-org-actions-ts:
     image: tailscale/tailscale:latest
+    container_name: github-org-actions-ts
     restart: unless-stopped
     hostname: github-org-actions
     environment:
