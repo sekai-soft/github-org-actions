@@ -4,6 +4,10 @@ from gql.transport.exceptions import TransportQueryError
 from .models import WorkflowResult, RepoResult, Result
 
 
+class GetResError(Exception):
+    pass
+
+
 async def call_gql(query, variables, token):
     headers = {"Authorization": f"Bearer {token}"}
     transport = AIOHTTPTransport(url="https://api.github.com/graphql", headers=headers)
@@ -47,11 +51,11 @@ query GitHubOrgActions($org: String!) {
 """
 
 
-async def get_res(org: str, excluded_repos: list[str], token: str) -> Result | str:
+async def get_res(org: str, excluded_repos: list[str], token: str) -> Result:
     try:
       gql_res = await call_gql(GET_RES_GQL, {"org": org}, token)
     except TransportQueryError as e:
-      return f"Errors: {str(e.errors)}"
+      raise GetResError(f"Errors: {str(e.errors)}")
     
     repo_results = []
     for repo in gql_res["organization"]["repositories"]["nodes"]:
